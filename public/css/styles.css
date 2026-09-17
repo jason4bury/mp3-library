@@ -1,0 +1,711 @@
+:root {
+  color-scheme: dark;
+  --bg: #14151a;
+  --bg-alt: #1d1e25;
+  --border: #2b2c35;
+  --text: #e8e8ec;
+  --muted: #9a9ba6;
+  --accent: #5b7fff;
+  --accent-hover: #4a6bed;
+  --danger: #ff6b6b;
+  --danger-hover: #ff4d4d;
+  --good: #4caf7d;
+  --warn: #e0a63c;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding-bottom: 84px; /* room for fixed player bar */
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.muted { color: var(--muted); }
+
+/* Topbar */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  background: var(--bg-alt);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.brand { font-weight: 700; font-size: 1.1rem; white-space: nowrap; }
+
+.tabs { display: flex; gap: 4px; }
+.tab-btn {
+  background: transparent; border: 1px solid var(--border); color: var(--muted);
+  padding: 7px 14px; border-radius: 8px; font-size: 0.9rem;
+}
+.tab-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+.search-wrap { flex: 1; min-width: 160px; position: relative; }
+#searchInput {
+  width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--bg); color: var(--text); font-size: 0.95rem;
+}
+#searchInput:focus { outline: 2px solid var(--accent); }
+
+/* Search-as-you-type suggestions dropdown */
+.search-suggestions {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 15;
+  background: var(--bg-alt); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4); max-height: 60vh; overflow-y: auto; padding: 6px;
+}
+.search-suggestions[hidden] { display: none; }
+.search-suggestions .sg-group-label {
+  font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;
+  color: var(--muted); padding: 6px 8px 2px;
+}
+.search-suggestions .sg-item {
+  display: flex; align-items: baseline; gap: 8px; padding: 7px 8px; border-radius: 6px;
+  cursor: pointer; font-size: 0.88rem;
+}
+.search-suggestions .sg-item:hover, .search-suggestions .sg-item.active { background: var(--bg); }
+.search-suggestions .sg-sub { color: var(--muted); font-size: 0.78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.search-suggestions .sg-empty { padding: 10px 8px; color: var(--muted); font-size: 0.85rem; }
+
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
+.btn-ghost {
+  background: transparent; border: 1px solid var(--border); color: var(--text);
+  padding: 7px 12px; border-radius: 8px; font-size: 0.85rem;
+}
+.btn-ghost:hover { border-color: var(--accent); }
+
+.scan-status { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+.scan-status.active { color: var(--accent); font-weight: 600; }
+
+/* A thin, full-width bar under the topbar while a scan is running — a real percentage once
+   phase 1 (see scanner.js) has counted the library, an indeterminate sliding animation before
+   that count is in yet. Exists so a rescan is visibly "doing something" even at a glance,
+   rather than only the small text label next to the Rescan button. */
+.scan-progress-bar {
+  height: 3px; background: var(--bg-alt); overflow: hidden; flex-shrink: 0;
+}
+.scan-progress-bar[hidden] { display: none; }
+.scan-progress-fill {
+  height: 100%; background: var(--accent); width: 0%; transition: width 0.3s ease;
+}
+.scan-progress-fill.indeterminate {
+  width: 30% !important; animation: scan-indeterminate 1.1s ease-in-out infinite;
+}
+@keyframes scan-indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(333%); }
+}
+
+/* Filters bar */
+.filters {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  padding: 10px 20px; border-bottom: 1px solid var(--border); background: var(--bg);
+}
+.filters select {
+  background: var(--bg-alt); color: var(--text); border: 1px solid var(--border);
+  border-radius: 6px; padding: 6px 8px; font-size: 0.85rem; max-width: 200px;
+}
+.result-count { margin-left: auto; color: var(--muted); font-size: 0.85rem; }
+
+/* Main / views */
+main { flex: 1; padding: 16px 20px; overflow-x: auto; }
+.view { display: none; }
+.view.active { display: block; }
+
+/* Track table */
+.track-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.track-table th {
+  text-align: left; padding: 8px 10px; color: var(--muted); font-weight: 600;
+  border-bottom: 1px solid var(--border); cursor: pointer; white-space: nowrap;
+  position: sticky; top: 0; background: var(--bg);
+}
+.track-table th:hover { color: var(--text); }
+.track-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.track-table tr.track-row:hover { background: var(--bg-alt); }
+.track-table tr.track-row.playing { background: rgba(91,127,255,0.15); }
+.cell-link { cursor: pointer; }
+.cell-link:hover { color: var(--accent); text-decoration: underline; }
+.col-cover { width: 44px; }
+.col-duration { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.col-select { width: 32px; }
+.col-select input, .col-select-header input { cursor: pointer; }
+.col-play { width: 30px; }
+.col-plays { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; width: 50px; }
+.col-lastplayed { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; width: 84px; }
+.col-added { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; width: 84px; }
+.col-fav { width: 36px; text-align: center; }
+.play-track-btn {
+  background: transparent; border: 1px solid var(--border); color: var(--muted);
+  width: 26px; height: 26px; border-radius: 6px; font-size: 0.75rem; line-height: 1; cursor: pointer;
+}
+.play-track-btn:hover { border-color: var(--accent); color: var(--accent); }
+.cell-cover-img {
+  width: 36px; height: 36px; border-radius: 4px; object-fit: cover; background: var(--bg-alt);
+  display: block;
+}
+
+.fav-btn {
+  background: none; border: none; cursor: pointer; font-size: 1rem; color: var(--muted);
+  line-height: 1; padding: 2px;
+}
+.fav-btn:hover { color: var(--accent); }
+.fav-btn.active { color: #e0567c; }
+
+.btn-ghost.active { border-color: var(--accent); color: var(--accent); background: rgba(91,127,255,0.1); }
+
+/* Multi-select bulk action bar (Tracks tab) */
+.bulk-bar {
+  display: flex; align-items: center; gap: 10px; background: var(--bg-alt);
+  border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px;
+  font-size: 0.85rem; color: var(--muted);
+}
+.bulk-bar #bulkSelectedCount { font-weight: 600; color: var(--text); }
+.bulk-bar button { margin-left: 4px; }
+
+.pagination {
+  display: flex; gap: 8px; justify-content: center; align-items: center;
+  padding: 16px 0; color: var(--muted); font-size: 0.9rem;
+}
+.pagination button {
+  background: var(--bg-alt); border: 1px solid var(--border); color: var(--text);
+  padding: 6px 12px; border-radius: 6px;
+}
+.pagination button:disabled { opacity: 0.4; cursor: default; }
+
+/* Artist grid */
+.artist-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px;
+}
+.artist-card { cursor: pointer; text-align: center; }
+.artist-photo {
+  width: 100%; aspect-ratio: 1; border-radius: 50%; object-fit: cover;
+  background: var(--bg-alt); border: 1px solid var(--border);
+}
+.artist-card .name { margin-top: 8px; font-weight: 600; font-size: 0.92rem; }
+.artist-card .meta { color: var(--muted); font-size: 0.78rem; }
+
+/* Album grid */
+.album-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px;
+}
+.album-card { cursor: pointer; text-align: center; }
+.album-cover {
+  width: 100%; aspect-ratio: 1; border-radius: 6px; object-fit: cover;
+  background: var(--bg-alt); border: 1px solid var(--border);
+}
+.album-card .name { margin-top: 8px; font-weight: 600; font-size: 0.92rem; }
+.album-card .meta { color: var(--muted); font-size: 0.78rem; }
+
+/* Album detail */
+.album-detail-header { display: flex; align-items: center; gap: 20px; margin-bottom: 24px; }
+.album-cover-lg {
+  width: 120px; height: 120px; border-radius: 8px; object-fit: cover;
+  background: var(--bg-alt); border: 1px solid var(--border); flex-shrink: 0;
+}
+
+/* Artist detail */
+.back-btn { margin-bottom: 16px; }
+.artist-detail-header { display: flex; align-items: center; gap: 20px; margin-bottom: 24px; }
+.artist-photo-lg {
+  width: 120px; height: 120px; border-radius: 50%; object-fit: cover;
+  background: var(--bg-alt); border: 1px solid var(--border); flex-shrink: 0;
+}
+/* Artist detail sub-tabs (Artist Info / Albums & Tracks) */
+.subtabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+.subtab-btn {
+  background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--muted);
+  padding: 8px 4px; margin-right: 20px; font-size: 0.9rem;
+}
+.subtab-btn:hover { color: var(--text); }
+.subtab-btn.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+.subview { display: none; }
+.subview.active { display: block; }
+
+/* Artist Info sub-tab: simple album + release year list */
+.artist-info-heading { font-size: 0.95rem; color: var(--muted); margin: 0 0 8px; font-weight: 600; }
+.artist-info-album-list { list-style: none; margin: 0 0 8px; padding: 0; max-width: 480px; }
+.artist-info-album-list li {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 10px 4px; border-bottom: 1px solid var(--border); font-size: 0.92rem;
+}
+.artist-info-album-list .ai-album-main {
+  display: flex; align-items: center; gap: 10px; min-width: 0; overflow: hidden;
+}
+.artist-info-album-list .ai-cover-thumb {
+  width: 36px; height: 36px; border-radius: 4px; object-fit: cover; background: var(--bg);
+  border: 1px solid var(--border); flex-shrink: 0; cursor: pointer;
+}
+.artist-info-album-list .ai-album {
+  font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+}
+.artist-info-album-list .ai-meta { color: var(--muted); font-size: 0.82rem; white-space: nowrap; flex-shrink: 0; }
+
+/* Floating picture preview — hover an artist photo or album cover (Artists/Albums grids, the
+   thumbnails in an artist's own album list, or the big photo/cover on a detail page) to see it
+   bigger. Not pointer-events:none anymore since it's clickable-through where that makes sense
+   (see showCoverPreview in app.js) — instead it tracks its own hover so moving the mouse from
+   the thumbnail across the gap onto the popup keeps it open rather than closing underneath you. */
+.cover-preview {
+  position: fixed; z-index: 50;
+  background: var(--bg-alt); border: 1px solid var(--border); border-radius: 10px;
+  padding: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+}
+.cover-preview img { display: block; width: 220px; height: 220px; object-fit: cover; border-radius: 6px; }
+.cover-preview[hidden] { display: none; }
+.cover-preview.clickable { cursor: pointer; }
+.cover-preview.clickable:hover img { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* Last.fm section */
+.lastfm-section { max-width: 640px; margin-bottom: 28px; }
+.lastfm-section .lastfm-header {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px;
+}
+.lastfm-section h3 { margin: 0; font-size: 0.95rem; color: var(--muted); font-weight: 600; }
+.lastfm-stats { font-size: 0.8rem; color: var(--muted); }
+.lastfm-bio { font-size: 0.92rem; line-height: 1.55; margin: 0 0 12px; }
+.lastfm-bio-toggle { background: none; border: none; color: var(--accent); font-size: 0.85rem; padding: 0; margin-top: 4px; }
+.lastfm-bio-toggle:hover { text-decoration: underline; }
+.pill-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.pill-label { font-size: 0.78rem; color: var(--muted); margin-right: 4px; align-self: center; }
+.pill {
+  display: inline-block; background: var(--bg-alt); border: 1px solid var(--border); color: var(--text);
+  padding: 3px 10px; border-radius: 999px; font-size: 0.78rem; text-decoration: none;
+}
+.pill:hover { border-color: var(--accent); color: var(--accent); }
+.lastfm-link { font-size: 0.8rem; color: var(--muted); }
+.lastfm-link a { color: var(--accent); text-decoration: none; }
+.lastfm-link a:hover { text-decoration: underline; }
+.lastfm-note {
+  font-size: 0.85rem; color: var(--muted); background: var(--bg-alt); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px 14px;
+}
+.lastfm-note a { color: var(--accent); }
+.lastfm-refresh {
+  background: none; border: none; color: var(--muted); font-size: 0.78rem; padding: 0;
+  text-decoration: underline; cursor: pointer;
+}
+.lastfm-refresh:hover { color: var(--accent); }
+
+.album-block { margin-bottom: 24px; padding: 6px; border-radius: 8px; }
+.album-block.flash-highlight { animation: albumFlash 1.5s ease; }
+@keyframes albumFlash {
+  0% { background: rgba(91,127,255,0.28); }
+  100% { background: transparent; }
+}
+.album-block h3 { margin: 0 0 4px; font-size: 1rem; }
+.album-block .year { color: var(--muted); font-size: 0.85rem; margin-bottom: 8px; }
+.album-track-list { list-style: none; margin: 0; padding: 0; }
+.album-track-list li {
+  padding: 6px 8px; border-radius: 6px; font-size: 0.9rem; display: flex;
+  align-items: center; gap: 12px;
+}
+.album-track-list .play-track-btn { flex-shrink: 0; }
+.album-track-list li:hover { background: var(--bg-alt); }
+.album-track-list li.playing { background: rgba(91,127,255,0.15); }
+.album-track-list .at-title {
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* Fixed width + right-aligned so the times line up in a column regardless of how long the
+   track title next to them is — previously this was a `justify-content: space-between` flex
+   row, which shifts the duration's on-screen position depending on the title's width. */
+.track-dur {
+  color: var(--muted); flex-shrink: 0; min-width: 38px; text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.album-track-list .add-to-playlist-btn { flex-shrink: 0; }
+.album-track-list .fav-btn { flex-shrink: 0; }
+.track-plays {
+  color: var(--muted); flex-shrink: 0; min-width: 28px; text-align: right;
+  font-variant-numeric: tabular-nums; font-size: 0.82rem; cursor: default;
+}
+
+/* Player bar */
+.player-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; height: 72px;
+  background: var(--bg-alt); border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 14px; padding: 0 20px; z-index: 10;
+}
+.player-cover {
+  width: 48px; height: 48px; border-radius: 4px; object-fit: cover; background: var(--bg);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transform-origin: left bottom;
+  position: relative;
+}
+.player-cover:hover {
+  transform: scale(3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  z-index: 20;
+}
+.player-info { min-width: 120px; max-width: 220px; overflow: hidden; }
+.player-title { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player-sub { font-size: 0.78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player-controls { flex: 1; display: flex; align-items: center; gap: 10px; }
+.btn-play {
+  width: 36px; height: 36px; border-radius: 50%; border: none; background: var(--accent);
+  color: white; font-size: 0.95rem; flex-shrink: 0;
+}
+.btn-play:hover { background: var(--accent-hover); }
+.btn-shuffle {
+  width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border); background: transparent;
+  color: var(--muted); font-size: 0.9rem; flex-shrink: 0; line-height: 1;
+}
+.btn-shuffle:hover { border-color: var(--accent); color: var(--accent); }
+.btn-shuffle.active { background: var(--accent); border-color: var(--accent); color: white; }
+#seekBar { flex: 1; accent-color: var(--accent); }
+.time-display { font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+.volume-control { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.mute-btn {
+  background: transparent; border: none; color: var(--muted); font-size: 1rem; cursor: pointer;
+  width: 26px; height: 26px; line-height: 1; flex-shrink: 0;
+}
+.mute-btn:hover { color: var(--text); }
+#volumeSlider { width: 80px; accent-color: var(--accent); }
+
+/* Now Playing panel — always on screen on the right (see index.html comment), not just while a
+   playlist plays. Fixed positioning + its own scroll so it's independent of whatever view/scroll
+   position the main content is in. Minimizing (see .minimized below) collapses it down to just
+   its header bar rather than hiding it — it never fully disappears. */
+.now-playing-panel {
+  position: fixed; top: 64px; right: 16px; bottom: 90px; width: 300px;
+  background: var(--bg-alt); border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 25;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.now-playing-panel.minimized { bottom: auto; height: auto; }
+.now-playing-panel.minimized .now-playing-list { display: none; }
+.now-playing-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 12px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.now-playing-panel.minimized .now-playing-header { border-bottom: none; }
+.now-playing-header .np-title {
+  font-weight: 600; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.now-playing-controls { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.now-playing-ctrl {
+  background: none; border: none; color: var(--muted); font-size: 1rem; line-height: 1;
+  width: 24px; height: 24px; border-radius: 5px; cursor: pointer;
+}
+.now-playing-ctrl:hover { color: var(--text); background: var(--bg); }
+.now-playing-list { list-style: none; margin: 0; padding: 6px; overflow-y: auto; flex: 1; }
+.now-playing-empty { padding: 16px 14px; color: var(--muted); font-size: 0.85rem; }
+.now-playing-list li {
+  display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 6px; font-size: 0.85rem;
+}
+.now-playing-list li:hover { background: var(--bg); }
+.now-playing-list li.playing { background: rgba(91,127,255,0.18); }
+.now-playing-list .np-cover {
+  width: 30px; height: 30px; border-radius: 4px; object-fit: cover; background: var(--bg); flex-shrink: 0;
+}
+.now-playing-list .np-info { min-width: 0; flex: 1; overflow: hidden; }
+.now-playing-list .np-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.now-playing-list .np-sub { color: var(--muted); font-size: 0.76rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.now-playing-list .np-play-btn, .now-playing-list .np-remove-btn {
+  background: transparent; border: 1px solid var(--border); color: var(--muted); width: 22px; height: 22px;
+  border-radius: 5px; font-size: 0.68rem; flex-shrink: 0; cursor: pointer;
+}
+.now-playing-list .np-play-btn:hover { border-color: var(--accent); color: var(--accent); }
+.now-playing-list .np-remove-btn:hover { border-color: #e0567c; color: #e0567c; }
+.now-playing-list .np-drag-handle {
+  flex-shrink: 0; color: var(--muted); cursor: grab; font-size: 0.85rem; padding: 0 1px; user-select: none;
+}
+.now-playing-list .np-drag-handle:hover { color: var(--text); }
+/* Same reorder-feedback treatment as .playlist-track-list below, scoped to this list instead. */
+.now-playing-list li.dragging { opacity: 0.4; }
+.now-playing-list li.drag-over-top { box-shadow: inset 0 2px 0 var(--accent); }
+.now-playing-list li.drag-over-bottom { box-shadow: inset 0 -2px 0 var(--accent); }
+
+/* The panel is always on screen now, so always give the filter bar and main content room on the
+   right for it — so their own right-aligned controls (a playlist's Play all/Rename/Delete
+   buttons, the Tracks tab's result count, …) wrap or shift left instead of ending up hidden
+   underneath it, whether it's minimized or maximized (minimizing only changes its height). */
+.filters,
+#mainView {
+  padding-right: 328px;
+}
+
+/* Buttons */
+.btn-primary {
+  background: var(--accent); border: 1px solid var(--accent); color: white;
+  padding: 8px 14px; border-radius: 8px; font-size: 0.88rem; font-weight: 600;
+}
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-danger { border-color: var(--danger); color: var(--danger); }
+.btn-danger:hover { background: rgba(255,107,107,0.12); }
+
+.section-toolbar { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 16px; }
+
+.generate-toolbar {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;
+  padding: 10px 12px; background: var(--bg-alt); border: 1px solid var(--border); border-radius: 8px;
+}
+.generate-label { color: var(--muted); font-size: 0.82rem; margin-right: 2px; }
+
+/* Add-to-playlist button on track rows */
+.col-add { width: 132px; display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.add-to-playlist-btn {
+  background: transparent; border: 1px solid var(--border); color: var(--muted);
+  width: 26px; height: 26px; border-radius: 6px; font-size: 0.95rem; line-height: 1;
+}
+.add-to-playlist-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Radio (📻 similar-tracks queue) button — same treatment as add-to-playlist, everywhere a
+   track row appears (Tracks tab, Artist albums/tracks list, Album detail list). */
+.radio-track-btn {
+  background: transparent; border: 1px solid var(--border); color: var(--muted);
+  width: 26px; height: 26px; border-radius: 6px; font-size: 0.85rem; line-height: 1; flex-shrink: 0;
+}
+.radio-track-btn:hover { border-color: var(--accent); color: var(--accent); }
+.radio-track-btn:disabled { opacity: 0.6; cursor: default; }
+.album-track-list .radio-track-btn { flex-shrink: 0; }
+
+/* Play next (⏭) / add to queue (📃) — same treatment as radio/add-to-playlist, everywhere a
+   track row appears. These act on the live playback queue itself (see playNext/addToQueue in
+   app.js), not the library, so they're independent of any saved playlist. */
+.play-next-btn, .add-to-queue-btn {
+  background: transparent; border: 1px solid var(--border); color: var(--muted);
+  width: 26px; height: 26px; border-radius: 6px; font-size: 0.8rem; line-height: 1; flex-shrink: 0;
+}
+.play-next-btn:hover, .add-to-queue-btn:hover { border-color: var(--accent); color: var(--accent); }
+.album-track-list .play-next-btn, .album-track-list .add-to-queue-btn { flex-shrink: 0; }
+
+/* Playlist grid */
+.playlist-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;
+}
+.playlist-card {
+  background: var(--bg-alt); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px; cursor: pointer;
+}
+.playlist-card:hover { border-color: var(--accent); }
+.playlist-card .name { font-weight: 600; margin-bottom: 6px; }
+.playlist-card .meta { color: var(--muted); font-size: 0.8rem; }
+.empty-state { color: var(--muted); text-align: center; padding: 40px 0; }
+
+/* Playlist detail */
+.playlist-detail-header {
+  display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;
+  gap: 12px; margin-bottom: 20px;
+}
+.playlist-detail-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.playlist-track-list { list-style: none; margin: 0; padding: 0; }
+.playlist-track-list li {
+  display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.playlist-track-list li:hover { background: var(--bg-alt); }
+.playlist-track-list li.dragging { opacity: 0.4; }
+.playlist-track-list li.drag-over-top { box-shadow: inset 0 2px 0 var(--accent); }
+.playlist-track-list li.drag-over-bottom { box-shadow: inset 0 -2px 0 var(--accent); }
+.playlist-track-list .pl-drag-handle {
+  flex-shrink: 0; color: var(--muted); cursor: grab; font-size: 0.9rem; padding: 0 2px;
+  user-select: none;
+}
+.playlist-track-list .pl-drag-handle:hover { color: var(--text); }
+/* .pl-* piece styling (cover/info/title/sub/duration/actions) is shared with .history-list
+   below — the History tab's rows use the same anatomy as a playlist track row, just with a
+   relative-time in place of a duration, so it reuses these classes rather than duplicating
+   them. */
+.playlist-track-list .pl-cover, .history-list .pl-cover { width: 32px; height: 32px; border-radius: 4px; object-fit: cover; flex-shrink: 0; }
+.playlist-track-list .pl-info, .history-list .pl-info { flex: 1; min-width: 0; }
+.playlist-track-list .pl-title, .history-list .pl-title { font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.playlist-track-list .pl-sub, .history-list .pl-sub { font-size: 0.78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.playlist-track-list .pl-dur, .history-list .pl-dur { color: var(--muted); font-size: 0.82rem; flex-shrink: 0; }
+.playlist-track-list .pl-actions, .history-list .pl-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.playlist-track-list button.icon-btn, .history-list button.icon-btn {
+  background: transparent; border: 1px solid var(--border); color: var(--muted);
+  width: 26px; height: 26px; border-radius: 6px; font-size: 0.85rem;
+}
+.playlist-track-list button.icon-btn:hover, .history-list button.icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.history-list { list-style: none; margin: 0; padding: 0; }
+.history-list li {
+  display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.history-list li:hover { background: var(--bg-alt); }
+
+/* Listening recap panel (History tab, above the full play log) */
+.recap-panel { margin-bottom: 24px; }
+.recap-section {
+  background: var(--bg-alt); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px 18px; margin-bottom: 16px;
+}
+.recap-summary { margin: 0 0 14px; color: var(--muted); font-size: 0.88rem; }
+.recap-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; }
+.recap-subheading { font-size: 0.82rem; color: var(--muted); margin: 0 0 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+.recap-year-group { margin-bottom: 14px; }
+.recap-year-group:last-child { margin-bottom: 0; }
+.recap-year-label { font-size: 0.82rem; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+.recap-otd-list li { border-bottom: 1px solid var(--border); }
+.recap-otd-list li:last-child { border-bottom: none; }
+
+.pagination {
+  display: flex; align-items: center; justify-content: center; gap: 14px; padding: 16px 0;
+}
+
+.smart-badge {
+  display: inline-block; font-size: 0.7rem; font-weight: 600; color: var(--accent);
+  border: 1px solid var(--accent); border-radius: 4px; padding: 1px 6px; margin-left: 8px;
+  vertical-align: middle; text-transform: uppercase; letter-spacing: 0.03em;
+}
+
+/* Add-to-playlist popover */
+.popover {
+  position: fixed; z-index: 30; background: var(--bg-alt); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px; width: 240px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.popover-title { font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; color: var(--muted); }
+.popover-divider { border-top: 1px solid var(--border); margin: 10px 0; }
+.popover-item {
+  display: flex; justify-content: space-between; align-items: center; padding: 6px 8px;
+  border-radius: 6px; font-size: 0.88rem; cursor: pointer;
+}
+.popover-item:hover { background: var(--bg); }
+.popover-item .count { color: var(--muted); font-size: 0.75rem; }
+#addToPlaylistNewForm { display: flex; gap: 6px; }
+#addToPlaylistNewForm input {
+  flex: 1; min-width: 0; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--bg); color: var(--text); font-size: 0.85rem;
+}
+#addToPlaylistNewForm button { padding: 6px 10px; font-size: 0.8rem; }
+
+/* Health view */
+.health-tiles {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px;
+  margin-bottom: 24px;
+}
+.health-tile {
+  background: var(--bg-alt); border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px 16px; cursor: pointer;
+}
+.health-tile:hover { border-color: var(--accent); }
+.health-tile.active { border-color: var(--accent); background: rgba(91,127,255,0.1); }
+.health-tile .num { font-size: 1.6rem; font-weight: 700; }
+.health-tile .num.ok { color: var(--good); }
+.health-tile .num.warn { color: var(--warn); }
+.health-tile .label { color: var(--muted); font-size: 0.8rem; margin-top: 2px; }
+.health-issue-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.health-issue-table th {
+  text-align: left; padding: 6px 8px; color: var(--muted); font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+.health-issue-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+.health-issue-table td.path { color: var(--muted); font-size: 0.8rem; word-break: break-all; }
+.dup-group { margin-bottom: 20px; }
+.dup-group h4 { margin: 0 0 6px; font-size: 0.9rem; }
+
+/* Stats view */
+.stat-tiles {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px;
+  margin-bottom: 28px;
+}
+.stat-tile {
+  background: var(--bg-alt); border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px 16px;
+}
+.stat-tile .num { font-size: 1.6rem; font-weight: 700; color: var(--accent); }
+.stat-tile .label { color: var(--muted); font-size: 0.8rem; margin-top: 2px; }
+.stat-tile .sub {
+  color: var(--muted); font-size: 0.72rem; margin-top: 4px; opacity: 0.8;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.bar-list { display: flex; flex-direction: column; gap: 2px; margin-bottom: 28px; }
+.bar-row {
+  display: flex; align-items: center; gap: 10px; padding: 4px 2px; border-radius: 6px;
+}
+.bar-row.clickable { cursor: pointer; }
+.bar-row.clickable:hover { background: var(--bg-alt); }
+.bar-row.clickable:hover .bar-label { color: var(--accent); text-decoration: underline; }
+.bar-label {
+  width: 160px; flex-shrink: 0; font-size: 0.85rem; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.bar-track {
+  flex: 1; height: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 5px;
+  overflow: hidden;
+}
+.bar-fill { height: 100%; background: var(--accent); border-radius: 5px; min-width: 4px; }
+.bar-value {
+  width: 64px; flex-shrink: 0; text-align: right; font-size: 0.8rem; color: var(--muted);
+  white-space: nowrap;
+}
+.bar-list-empty { color: var(--muted); font-size: 0.85rem; padding: 8px 2px; }
+
+/* Generic modal */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40;
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+/* Without this, the [hidden] attribute set by the JS has the same specificity as
+   the display:flex rule above and loses to it, so the modal would never actually hide. */
+.modal-overlay[hidden] { display: none; }
+.modal-box {
+  background: var(--bg-alt); border: 1px solid var(--border); border-radius: 12px;
+  padding: 20px; width: 100%; max-width: 360px;
+}
+.modal-title { font-size: 0.95rem; margin-bottom: 12px; }
+.modal-message {
+  font-size: 0.85rem; line-height: 1.6; color: var(--muted); white-space: pre-line;
+  margin: -4px 0 14px;
+}
+#modalInput, #modalSelect {
+  width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--bg); color: var(--text); font-size: 0.9rem; margin-bottom: 14px;
+}
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* Settings modal */
+#settingsModal .modal-box { max-width: 400px; }
+.settings-section { margin-bottom: 18px; }
+.settings-section h3 { font-size: 0.85rem; margin: 0 0 8px; color: var(--text); }
+.settings-row { display: flex; align-items: center; gap: 8px; font-size: 0.88rem; margin-bottom: 8px; }
+.settings-row input[type="range"] { flex: 1; }
+.settings-hint { font-size: 0.78rem; line-height: 1.5; margin: 4px 0 0; }
+#crossfadeDurationRow.disabled { opacity: 0.5; pointer-events: none; }
+
+/* About modal */
+.about-content { font-size: 0.9rem; line-height: 1.6; margin-bottom: 16px; }
+.about-content .about-name { font-weight: 700; font-size: 1.05rem; margin-bottom: 2px; }
+.about-content .about-version { color: var(--muted); font-size: 0.8rem; margin-bottom: 10px; }
+.about-content .about-description { margin-bottom: 12px; }
+.about-content .about-stats { color: var(--muted); font-size: 0.85rem; }
+.about-content .about-credit { color: var(--muted); font-size: 0.78rem; margin-top: 12px; }
+.about-content .about-credit a { color: var(--accent); text-decoration: none; }
+.about-content .about-credit a:hover { text-decoration: underline; }
+
+/* Responsive */
+@media (max-width: 640px) {
+  .topbar { padding: 10px 12px; }
+  main { padding: 12px; }
+  .player-info { display: none; }
+  #volumeSlider { width: 44px; }
+  .filters select { max-width: 45%; flex: 1; }
+  .tabs { order: 3; width: 100%; }
+  /* The topbar can wrap to several rows at this width, so the panel needs more headroom than
+     the desktop 64px to clear it. */
+  .now-playing-panel { top: 132px; right: 8px; left: 8px; width: auto; }
+  /* The panel goes full-width at this size, so it sits above content rather than beside it —
+     the reflow padding used at wider widths would just waste space here. */
+  .filters,
+  #mainView {
+    padding-right: 12px;
+  }
+}

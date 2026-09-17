@@ -1,38 +1,31 @@
 services:
   mp3-library:
-    build: .
-    # Pins the built image's name to "mp3-library" — without this, Compose falls back to
-    # "<project>-<service>" (e.g. "mp3library-mp3-library" if Portainer named the stack
-    # "mp3library"), which is harmless but a confusing name to see in Portainer/`docker images`.
-    # If you're pushing/pulling from a registry instead of building locally, swap this for
-    # something like "your-registry/mp3-library:latest".
     image: mp3-library
-    container_name: mp3-library
-    restart: unless-stopped
-    ports:
-      - "${PORT:-3000}:3000"
     environment:
       PORT: 3000
-      MUSIC_DIR: ${MUSIC_DIR:-/music/collection1,/music/collection2}
-      ARTIST_PICTURES_DIR: ${ARTIST_PICTURES_DIR:-/artist-pictures}
-      DATA_DIR: ${DATA_DIR:-/data}
-      APP_USERNAME: ${APP_USERNAME:-admin}
-      APP_PASSWORD: ${APP_PASSWORD:?set APP_PASSWORD in your .env file}
-      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in your .env file}
+      MUSIC_DIR: ${MUSIC_DIR}
+      ARTIST_PICTURES_DIR: ${ARTIST_PICTURES_DIR}
+      DATA_DIR: ${DATA_DIR}
+      APP_USERNAME: ${APP_USERNAME}
+      APP_PASSWORD: ${APP_PASSWORD}
+      SESSION_SECRET: ${SESSION_SECRET}
       # Optional — powers the Last.fm "About" section on the Artist Info tab and the Radio
       # (📻 similar-tracks queue) feature. Free key from https://www.last.fm/api/account/create.
       # Leave unset to skip that section (Radio still works via a same-genre/same-artist fallback).
-      LASTFM_API_KEY: ${LASTFM_API_KEY:-}
+      LASTFM_API_KEY: ${LASTFM_API_KEY}
       # Required only if you also want scrobbling (connect your account from Settings in the
       # app) — the "Shared secret" from the same Last.fm API account page.
-      LASTFM_API_SECRET: ${LASTFM_API_SECRET:-}
+      LASTFM_API_SECRET: ${LASTFM_API_SECRET}
     volumes:
       # These read the HOST-side paths straight from your .env file (MUSIC_HOST_DIR_1 etc.) —
       # edit .env, not this file. Read-only is enough — the app never writes here.
       # Only one music folder? Delete the MUSIC_HOST_DIR_2 line below AND drop
       # ",/music/collection2" from MUSIC_DIR in your .env.
-      - "${MUSIC_HOST_DIR_1:?set MUSIC_HOST_DIR_1 in your .env file}:/music/collection1:ro"
-      - "${MUSIC_HOST_DIR_2:?set MUSIC_HOST_DIR_2 in your .env file}:/music/collection2:ro"
-      - "${ARTIST_PICTURES_HOST_DIR:?set ARTIST_PICTURES_HOST_DIR in your .env file}:/artist-pictures:ro"
-      # Persistent database + covers cache — kept alongside your other services' config.
       - ${CONFIGS}/mp3-library:/data
+      - ${MUSIC_HOST_DIR_1}:/music/collection1:ro
+      - ${MUSIC_HOST_DIR_2}:/music/collection2:ro
+      - ${ARTIST_PICTURES_HOST_DIR}:/artist-pictures:ro"
+      # Persistent database + covers cache — kept alongside your other services' config.
+    ports:
+      - "${PORT}:3000"
+    restart: unless-stopped

@@ -4,6 +4,7 @@
   "description": "Self-hosted searchable database for your MP3 collection — reads ID3 tags, embedded cover art, and artist photos from disk.",
   "main": "server/index.js",
   "type": "commonjs",
+  "license": "MIT",
   "scripts": {
     "start": "node server/index.js",
     "dev": "node server/index.js"
